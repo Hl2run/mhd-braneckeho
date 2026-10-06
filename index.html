@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="sk" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Braneckého · Odchody MHD · Trenčín</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root { --bg:#f5f7f7; --surface:#fff; --alternate:#e9eef0; --ink:#10292e; --muted:#40585e; --line:#b1c1c6; --accent:#006155; --badge:#005c51; --badge-ink:#fff; --warning:#713c00; --warning-bg:#fff0d5; color-scheme:light; }
+    :root[data-theme="dark"] { --bg:#0c171b; --surface:#132329; --alternate:#1c3038; --ink:#f3f7f7; --muted:#bbced3; --line:#415b65; --accent:#8fe5ca; --badge:#a1ead3; --badge-ink:#10292e; --warning:#ffe0a4; --warning-bg:#372b19; color-scheme:dark; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:Arial,Helvetica,sans-serif; font-size:clamp(22px,3.1vw,90px); }
+    .board { height:100vh; height:100dvh; padding:3.2vw 3.6vw 2.5vw; display:flex; flex-direction:column; gap:2.6vw; overflow:hidden; }
+    .masthead { display:grid; grid-template-columns:1fr 1.65fr 1fr; align-items:center; gap:2vw; }
+    .brand { font-size:3vw; font-weight:800; letter-spacing:.05em; }
+    .brand svg { display:block; width:100%; height:auto; max-height:11vw; }
+    .brand img { width:100%; display:block; background:white; padding:1vw; border-radius:.5vw; }
+    .clock-block { text-align:center; }
+    #clock { display:block; font-size:9.8vw; font-weight:800; letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums; }
+    #date { margin-top:1.2vw; font-size:2.7vw; color:var(--muted); }
+    .mode-label { text-align:right; font-size:2.4vw; color:var(--muted); line-height:1.5; }
+    .stop { border-top:.35vw solid var(--accent); padding-top:3vw; }
+    .eyebrow { margin:0 0 1vw; font-size:2.8vw; font-weight:700; color:var(--muted); letter-spacing:.09em; text-transform:uppercase; }
+    h1 { margin:0; font-size:7.8vw; line-height:1.05; letter-spacing:-.025em; }
+    .stop-details { display:flex; justify-content:space-between; margin-top:1.4vw; font-size:3vw; color:var(--muted); gap:2vw; }
+    .list { flex:1; min-height:0; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    col.route-col { width:15%; } col.destination-col { width:57%; } col.departure-col { width:28%; }
+    thead th { padding:1.6vw 1.5vw; text-align:left; font-size:2.9vw; color:var(--muted); border-bottom:.15vw solid var(--line); }
+    thead th:last-child { text-align:right; }
+    tbody tr { background:var(--surface); border-bottom:.15vw solid var(--line); }
+    tbody tr:nth-child(even) { background:var(--alternate); }
+    td { padding:2.2vw 1.5vw; vertical-align:middle; }
+    .route { display:inline-flex; align-items:center; justify-content:center; min-width:9vw; min-height:8.4vw; padding:1vw .5vw; border-radius:1vw; background:var(--badge); color:var(--badge-ink); font-weight:800; font-size:5.5vw; line-height:1; }
+    .destination { font-size:4.3vw; line-height:1.18; font-weight:700; overflow-wrap:anywhere; }
+    .departure { font-size:5.5vw; line-height:1.2; text-align:right; font-weight:800; font-variant-numeric:tabular-nums; white-space:normal; overflow-wrap:anywhere; }
+    tbody tr:first-child .departure { color:var(--accent); }
+    .platform { display:block; font-size:2.6vw; margin-top:.7vw; color:var(--muted); font-weight:400; }
+    .message { padding:6vw 2vw; font-size:4.3vw; font-weight:700; line-height:1.4; }
+    .notice { background:var(--warning-bg); color:var(--warning); padding:1.7vw 2vw; font-size:3vw; line-height:1.3; border-left:.5vw solid var(--warning); max-height:17vw; overflow:auto; }
+    .notice strong { display:block; margin-bottom:.5vw; }
+    .footer { font-size:2.5vw; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:1vw; border-top:.15vw solid var(--line); padding-top:1.5vw; }
+    .status { display:inline-flex; align-items:center; gap:1vw; }
+    .dot { width:1.2vw; height:1.2vw; background:var(--accent); border-radius:50%; }
+    .stale .dot { background:var(--warning); }
+    [hidden] { display:none !important; }
+    @media (orientation:landscape) { .board { padding:2vh 4vw; gap:1vh; } #clock { font-size:8vh; } #date,.brand,.mode-label { font-size:2.5vh; } .stop { padding-top:1vh; } h1 { font-size:6vh; } .eyebrow,.stop-details,thead th,.footer { font-size:2.5vh; } td { padding:1.2vh 1.5vw; } .route { min-height:5vh; min-width:5vw; font-size:4vh; } .destination { font-size:3.5vh; } .departure { font-size:4.5vh; } .platform { font-size:2.3vh; } }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="masthead">
+      <!-- Replace the text inside #city-logo with the official inline SVG to keep this file self-contained.
+           Alternatively set CONFIG.logoUrl to an approved SVG/PNG; a white backing preserves its colours in both themes. -->
+      <div class="brand" id="city-logo" aria-label="Mesto Trenčín">TRENČÍN</div>
+      <div class="clock-block"><time id="clock" aria-label="Aktuálny čas">--:--</time><div id="date"></div></div>
+      <div class="mode-label">Mestská<br>hromadná doprava</div>
+    </header>
+    <section class="stop" aria-labelledby="stop-name">
+      <p class="eyebrow">Odchody autobusov</p>
+      <h1 id="stop-name">Braneckého</h1>
+      <div class="stop-details"><span id="platform-label">Nástupište A</span><span>Trenčín</span></div>
+    </section>
+    <div id="warning" class="notice" role="status" hidden></div>
+    <section class="list" id="list" aria-label="Najbližšie odchody">
+      <table><colgroup><col class="route-col"><col class="destination-col"><col class="departure-col"></colgroup>
+        <thead><tr><th scope="col">Linka</th><th scope="col">Smer</th><th scope="col">Odchod</th></tr></thead>
+        <tbody id="departures"></tbody>
+      </table>
+      <div class="message" id="message" role="status">Načítavam odchody…</div>
+    </section>
+    <aside id="traffic" class="notice" hidden><strong>Dopravné informácie</strong><span id="traffic-text"></span></aside>
+    <footer class="footer"><span class="status" id="status"><span class="dot"></span><span id="status-text">Pripájam sa…</span></span><span id="updated">Obnova každých 10 sekúnd</span></footer>
+  </main>
+  <script>
+    'use strict';
+    const CONFIG = {
+      cid:'dpmtn', tid:'509', pid:'A', refreshMs:10000, staleMs:30000,
+      timeZone:'Europe/Bratislava', latitude:48.8945, longitude:18.0444,
+      endpoint:'https://dispecink.buse.cz/zastavka-online/service/',
+      logoUrl:''
+    };
+    const query = new URLSearchParams(location.search);
+    const demo = query.get('demo') === '1';
+    const $ = id => document.getElementById(id);
+    const timeFormat = new Intl.DateTimeFormat('sk-SK',{timeZone:CONFIG.timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+    const dateFormat = new Intl.DateTimeFormat('sk-SK',{timeZone:CONFIG.timeZone,weekday:'long',day:'numeric',month:'long'});
+    let stopInfo = null, data = null, lastSuccess = 0, infoSuccess = false;
+    let pending = false, transportFailure = false;
+    // NOAA solar elevation approximation. Day begins/ends when the sun crosses -0.833 degrees.
+    function isDaylight(now) {
+      const start = Date.UTC(now.getUTCFullYear(),0,0);
+      const day = Math.floor((Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-start)/86400000);
+      const hour = now.getUTCHours()+now.getUTCMinutes()/60+now.getUTCSeconds()/3600;
+      const gamma = 2*Math.PI/365*(day-1+(hour-12)/24);
+      const eq = 229.18*(.000075+.001868*Math.cos(gamma)-.032077*Math.sin(gamma)-.014615*Math.cos(2*gamma)-.040849*Math.sin(2*gamma));
+      const dec = .006918-.399912*Math.cos(gamma)+.070257*Math.sin(gamma)-.006758*Math.cos(2*gamma)+.000907*Math.sin(2*gamma)-.002697*Math.cos(3*gamma)+.00148*Math.sin(3*gamma);
+      const angle = ((hour*60+eq+4*CONFIG.longitude)%1440/4-180)*Math.PI/180;
+      const lat = CONFIG.latitude*Math.PI/180;
+      const elevation = Math.asin(Math.sin(lat)*Math.sin(dec)+Math.cos(lat)*Math.cos(dec)*Math.cos(angle))*180/Math.PI;
+      return elevation > -.833;
+    }
+    function tick() {
+      const now = new Date();
+      $('clock').textContent = timeFormat.format(now);
+      $('clock').dateTime = now.toISOString();
+      $('date').textContent = dateFormat.format(now);
+      const override = query.get('theme');
+      document.documentElement.dataset.theme = override==='light'||override==='dark' ? override : isDaylight(now)?'light':'dark';
+      updateStatus();
+    }
+    function updateStatus() {
+      if (demo) { $('status-text').textContent='UKÁŽKA · fiktívne odchody'; return; }
+      const stale = lastSuccess && Date.now()-lastSuccess>CONFIG.staleMs;
+      $('status').classList.toggle('stale',Boolean(stale||transportFailure));
+      $('warning').hidden = !stale;
+      if (stale) {
+        $('warning').textContent='Odchody sa nepodarilo obnoviť. Zobrazené údaje sú neaktuálne.';
+        // Old countdowns must never look like current live information.
+        $('departures').replaceChildren();
+        $('message').hidden=false;
+        $('message').textContent='Čakám na aktuálne odchody…';
+        $('traffic').hidden=true;
+        $('status-text').textContent='Spojenie prerušené · skúšam znova';
+      } else if (lastSuccess) {
+        $('status-text').textContent=transportFailure?'Obnovujem spojenie…':'Aktuálne odchody';
+      } else {
+        $('status-text').textContent=transportFailure?'Odchody sú dočasne nedostupné':'Pripájam sa…';
+      }
+    }
+    async function request(operation) {
+      const url = new URL(CONFIG.endpoint,location.href);
+      url.search = new URLSearchParams({operation,cid:CONFIG.cid,tid:CONFIG.tid,pid:CONFIG.pid}).toString();
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(),8000);
+      try {
+        const response = await fetch(url,{cache:'no-store',signal:controller.signal,credentials:'omit'});
+        if (!response.ok) throw new Error('HTTP '+response.status);
+        return await response.json();
+      } finally { clearTimeout(timeout); }
+    }
+    function cleanTraffic(value) {
+      if (typeof value !== 'string') return '';
+      // The original app removes a two-character wrapper before rendering HTML.
+      let text = value;
+      if (text.startsWith('["')&&text.endsWith('"]')) {
+        try { text=JSON.parse(text).join(' '); } catch (_) { text=text.slice(2,-2); }
+      }
+      const doc = new DOMParser().parseFromString(text,'text/html');
+      doc.querySelectorAll('script,style').forEach(el=>el.remove());
+      doc.querySelectorAll('br').forEach(el=>el.replaceWith(' · '));
+      return (doc.body.textContent||'').trim();
+    }
+    function applyStop(info) {
+      if (!info || typeof info.platform !== 'string' || !info.platform) throw new Error('Missing platform');
+      stopInfo=info; infoSuccess=true;
+      $('stop-name').textContent=info.stopName||'Braneckého';
+      $('platform-label').textContent='Nástupište '+info.platform;
+    }
+    function acceptData(payload) {
+      if (!payload || !Array.isArray(payload.departures)) throw new Error('Invalid departures');
+      // Match the source page: only the platform returned by get_stop_info.
+      // Do not show departures while the selected platform is unknown.
+      if (!stopInfo) throw new Error('Stop information unavailable');
+      if (payload.departures.some(d=>!d||typeof d!=='object'||d.line==null||d.destination==null||d.departure==null||d.platform==null)) throw new Error('Invalid departure row');
+      data=payload; lastSuccess=Date.now(); transportFailure=false;
+      $('updated').textContent='Obnovené '+timeFormat.format(new Date(lastSuccess));
+      render(); updateStatus();
+    }
+    function render() {
+      if (!data || !stopInfo) return;
+      const rows=data.departures.filter(d=>String(d.platform)===String(stopInfo.platform));
+      $('departures').replaceChildren();
+      $('message').hidden=rows.length>0;
+      $('message').textContent='Momentálne nie sú k dispozícii ďalšie odchody.';
+      const traffic=cleanTraffic(data.trafficInfo);
+      $('traffic-text').textContent=traffic;
+      $('traffic').hidden=!traffic;
+      for (const departure of rows) {
+        const tr=document.createElement('tr');
+        const routeCell=document.createElement('td');
+        const route=document.createElement('span'); route.className='route'; route.textContent=String(departure.line); routeCell.append(route);
+        const destination=document.createElement('td'); destination.className='destination'; destination.textContent=String(departure.destination);
+        const time=document.createElement('td'); time.className='departure'; time.textContent=String(departure.departure);
+        tr.append(routeCell,destination,time); $('departures').append(tr);
+      }
+      fitRows();
+    }
+    function fitRows() {
+      const bottom=$('list').getBoundingClientRect().bottom;
+      let full=false;
+      // Show only whole rows that fit, keeping the nearest departures visible.
+      for (const tr of $('departures').children) {
+        tr.hidden=full;
+        if (!full && tr.getBoundingClientRect().bottom>bottom-2) { tr.hidden=true; full=true; }
+      }
+    }
+    async function refresh() {
+      if (demo||pending) return;
+      pending=true;
+      try {
+        if (!infoSuccess) applyStop(await request('get_stop_info'));
+        acceptData(await request('get_stop_departures'));
+      } catch (error) {
+        transportFailure=true;
+        if (!lastSuccess) { $('message').hidden=false; $('message').textContent='Odchody sa nepodarilo načítať. Automaticky skúšam znova…'; }
+        updateStatus();
+        console.warn('Departure refresh failed:',error.message);
+      } finally { pending=false; setTimeout(refresh,CONFIG.refreshMs); }
+    }
+    if (CONFIG.logoUrl) {
+      const img=document.createElement('img'); img.src=CONFIG.logoUrl; img.alt='Mesto Trenčín';
+      img.addEventListener('error',()=>{$('city-logo').textContent='TRENČÍN';}); $('city-logo').replaceChildren(img);
+    }
+    tick(); setInterval(tick,1000);
+    window.addEventListener('resize',()=>{if (lastSuccess && (demo||Date.now()-lastSuccess<=CONFIG.staleMs)) render();});
+    if (demo) {
+      applyStop({stopName:'Braneckého',platform:'A'});
+      acceptData({departures:[
+        {line:'1',destination:'Ukážkový smer A',departure:'2 min',platform:'A'},
+        {line:'4',destination:'Ukážkový smer B',departure:'7 min',platform:'A'},
+        {line:'6',destination:'Ukážkový dlhší názov zastávky',departure:'23:48',platform:'A'},
+        {line:'11',destination:'Ukážkový smer D',departure:'15 min',platform:'A'},
+        {line:'24',destination:'Ukážkový smer E',departure:'23:59',platform:'A'},
+        {line:'N',destination:'Ukážkový nočný spoj',departure:'00:12',platform:'A'}
+      ],trafficInfo:''});
+    } else { refresh(); }
+  </script>
+</body>
+</html>
